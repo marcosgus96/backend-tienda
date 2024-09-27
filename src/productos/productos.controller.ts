@@ -1,8 +1,9 @@
 import { Controller, Get, Post, Put, Delete, Param, Body } from '@nestjs/common';
 import { ProductosService } from './productos.service';
+import { CreateProductoDto } from './dto/create-producto.dto';
+import { UpdateProductoDto } from './dto/update-producto.dto';
 import { Producto } from './producto.entity';
 
-/*Este controlador expone las rutas(metodos http) para manejar operaciones CRUD (Crear, Leer, Actualizar, Eliminar) sobre los productos.*/
 @Controller('productos')
 export class ProductosController {
   constructor(private readonly productosService: ProductosService) {}
@@ -18,13 +19,16 @@ export class ProductosController {
   }
 
   @Post()
-  async create(@Body() producto: Producto): Promise<Producto> {
-    return this.productosService.create(producto);
+  async create(@Body() createProductoDto: CreateProductoDto): Promise<Producto> {
+    return this.productosService.create(createProductoDto);
   }
 
   @Put(':id')
-  async update(@Param('id') id: number, @Body() producto: Producto): Promise<Producto> {
-    return this.productosService.update(id, producto);
+  async update(
+    @Param('id') id: number,
+    @Body() updateProductoDto: UpdateProductoDto,
+  ): Promise<Producto> {
+    return this.productosService.update(id, updateProductoDto);
   }
 
   @Delete(':id')
@@ -32,3 +36,4 @@ export class ProductosController {
     return this.productosService.remove(id);
   }
 }
+
