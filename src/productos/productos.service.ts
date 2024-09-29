@@ -1,10 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Between, FindOptionsWhere, Like, Repository } from 'typeorm';
 
 import { Producto } from './producto.entity';
 import { CreateProductoDto } from './dto/create-producto.dto';
 import { UpdateProductoDto } from './dto/update-producto.dto';
+import { GetProductosDto } from './dto/get-productos.dto';
+import { Categoria } from 'src/categorias/categoria.entity';
 /*En el método create, utilizamos this.productoRepository.create(createProductoDto) para crear una nueva 
 instancia de Producto a partir del DTO. En el método update, primero obtenemos el producto existente, 
 luego utilizamos Object.assign para actualizar sus propiedades con los valores del DTO, y finalmente guardamos los cambios. */
@@ -14,14 +16,58 @@ export class ProductosService {
   constructor(
     @InjectRepository(Producto)
     private productoRepository: Repository<Producto>,
+    @InjectRepository(Categoria)
+    private categoriaRepository: Repository<Categoria>,
   ) {}
 
-  async findAll(): Promise<Producto[]> {
-    return this.productoRepository.find();
+  async findAll(query: GetProductosDto): Promise<{ data: Producto[]; total: number; pagina: number; lastPage: number }> {
+    const {
+      categoriaId,
+      nombre,
+      precioMin,
+      precioMax,
+      pagina = 1,
+      limite = 10,
+    } = query;
+  
+    const where: any = {};
+  
+    if (nombre) {
+      where.nombre = Like(`%${nombre}%`);
+    }
+  
+    if (precioMin !== undefined && precioMax !== undefined) {
+      where.precio = Between(precioMin, precioMax);
+    } else if (precioMin !== undefined) {
+      where.precio = Between(precioMin, Number.MAX_SAFE_INTEGER);
+    } else if (precioMax !== undefined) {
+      where.precio = Between(0, precioMax);
+    }
+  
+    const skip = (pagina - 1) * limite;
+  
+    const queryBuilder = this.productoRepository.createQueryBuilder('producto')
+      .leftJoinAndSelect('producto.categoria', 'categoria')
+      .where(where)
+      .skip(skip)
+      .take(limite);
+  
+    if (categoriaId) {
+      queryBuilder.andWhere('categoria.id = :categoriaId', { categoriaId });
+    }
+  
+    const [data, total] = await queryBuilder.getManyAndCount();
+  
+    const lastPage = Math.ceil(total / limite);
+  
+    return { data, total, pagina, lastPage };
   }
 
   async findOne(id: number): Promise<Producto> {
-    const producto = await this.productoRepository.findOneBy({ id });
+    const producto = await this.productoRepository.findOne({
+      where: { id },
+      relations: ['categoria'],
+    });
     if (!producto) {
       throw new NotFoundException(`Producto con ID ${id} no encontrado`);
     }
@@ -29,12 +75,30 @@ export class ProductosService {
   }
 
   async create(createProductoDto: CreateProductoDto): Promise<Producto> {
-    const nuevoProducto = this.productoRepository.create(createProductoDto);
+    const { categoriaId, ...productoData } = createProductoDto;
+    const categoria = await this.categoriaRepository.findOneBy({ id: categoriaId });
+    if (!categoria) {
+      throw new NotFoundException(`Categoría con ID ${categoriaId} no encontrada`);
+    }
+
+    const nuevoProducto = this.productoRepository.create({
+      ...productoData,
+      categoria,
+    });
     return this.productoRepository.save(nuevoProducto);
   }
 
   async update(id: number, updateProductoDto: UpdateProductoDto): Promise<Producto> {
     const producto = await this.findOne(id);
+
+    if (updateProductoDto.categoriaId) {
+      const categoria = await this.categoriaRepository.findOneBy({ id: updateProductoDto.categoriaId });
+      if (!categoria) {
+        throw new NotFoundException(`Categoría con ID ${updateProductoDto.categoriaId} no encontrada`);
+      }
+      producto.categoria = categoria;
+    }
+
     const productoActualizado = Object.assign(producto, updateProductoDto);
     return this.productoRepository.save(productoActualizado);
   }
