@@ -13,9 +13,10 @@ import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiParam, ApiBody } 
 export class PedidosController {
   constructor(private readonly pedidosService: PedidosService) {}
 
+  
   @UseGuards(AuthGuard('jwt'))
   @Post()
-  @ApiBearerAuth()
+  @ApiBearerAuth('access-token') // Especificamos el esquema de seguridad
   @ApiOperation({ summary: 'Crear un nuevo pedido' })
   @ApiBody({ type: CreatePedidoDto })
   @ApiResponse({ status: 201, description: 'Pedido creado exitosamente.', type: Pedido })
@@ -47,7 +48,7 @@ export class PedidosController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles(Rol.ADMIN)
   @Put(':id/estado')
-  @ApiBearerAuth()
+  @ApiBearerAuth('access-token') // Especificamos el esquema de seguridad
   @ApiOperation({ summary: 'Actualizar el estado de un pedido (solo ADMIN)' })
   @ApiParam({ name: 'id', description: 'ID del pedido', type: Number })
   @ApiBody({ schema: { type: 'object', properties: { estado: { type: 'string', enum: Object.values(EstadoPedido) } } } })

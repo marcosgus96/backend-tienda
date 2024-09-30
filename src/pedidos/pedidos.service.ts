@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException  } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Inject  } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
@@ -9,6 +9,7 @@ import { UsuariosService } from '../usuarios/usuarios.service';
 import { ProductosService } from '../productos/productos.service';
 // ... otras importaciones
 import { Producto } from '../productos/producto.entity';
+import { ClientProxy } from '@nestjs/microservices';
 
 
 @Injectable()
@@ -20,7 +21,11 @@ export class PedidosService {
     private detallePedidoRepository: Repository<DetallePedido>,
     private usuariosService: UsuariosService,
     private productosService: ProductosService,
-  ) {}
+    @Inject('NOTIFICACIONES_SERVICE') private readonly client: ClientProxy,
+    @Inject('FACTURACION_SERVICE') private readonly clientD: ClientProxy,
+  ) {
+    this.client.connect();
+  }
 
   async create(createPedidoDto: CreatePedidoDto, usuarioId: number): Promise<Pedido> {
     const usuario = await this.usuariosService.findOne(usuarioId);
@@ -68,6 +73,25 @@ export class PedidosService {
 
       pedido.detalles = detalles;
       const nuevoPedido = await queryRunner.manager.save(pedido);
+      const pedidoData = {
+        idPedido: nuevoPedido.id,
+        nombreCliente: nuevoPedido.usuario.username,
+        emailCliente: nuevoPedido.usuario.email,
+        fecha: nuevoPedido.fechaCreacion,
+        detalles: nuevoPedido.detalles.map((detalle) => ({
+          producto: detalle.producto.nombre,
+          cantidad: detalle.cantidad,
+          precioUnitario: detalle.precioUnitario,
+          total: detalle.cantidad * detalle.precioUnitario,
+        })),
+        total: nuevoPedido.detalles.reduce(
+          (sum, detalle) => sum + detalle.cantidad * detalle.precioUnitario,
+          0,
+        ),
+      };
+  
+      this.clientD.emit('pedido_creado', pedidoData);
+  
 
       await queryRunner.commitTransaction();
       return nuevoPedido;
@@ -77,6 +101,8 @@ export class PedidosService {
     } finally {
       await queryRunner.release();
     }
+
+    
   }
 
   async findAll(): Promise<Pedido[]> {
@@ -104,6 +130,18 @@ export class PedidosService {
   async updateEstado(id: number, estado: EstadoPedido): Promise<Pedido> {
     const pedido = await this.findOne(id);
     pedido.estado = estado;
-    return this.pedidoRepository.save(pedido);
+    const pedidoActualizado = await this.pedidoRepository.save(pedido);
+
+    // Obtener el email del usuario
+    const emailUsuario = pedido.usuario.email;
+
+    // Emitir evento al microservicio de notificaciones
+    this.client.emit('pedido_actualizado', {
+      emailUsuario,
+      estadoPedido: estado,
+      idPedido: pedido.id,
+    });
+
+    return pedidoActualizado;
   }
 }
