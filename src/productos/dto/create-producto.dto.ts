@@ -1,5 +1,5 @@
+import { IsNotEmpty, IsDecimal, IsString, IsInt, Min } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsDecimal, IsString, IsInt } from 'class-validator';
 
 export class CreateProductoDto {
   @ApiProperty({ description: 'Nombre del producto' })
@@ -7,14 +7,17 @@ export class CreateProductoDto {
   @IsString()
   nombre: string;
 
+  @ApiProperty({ description: 'Precio del producto' })
   @IsNotEmpty()
   @IsDecimal()
   precio: number;
 
+  @ApiProperty({ description: 'Descripción del producto' })
   @IsNotEmpty()
   @IsString()
   descripcion: string;
 
+  @ApiProperty({ description: 'URL de la imagen del producto' })
   @IsNotEmpty()
   @IsString()
   imagen: string;
@@ -23,5 +26,11 @@ export class CreateProductoDto {
   @IsNotEmpty()
   @IsInt()
   categoriaId: number;
+
+  @ApiProperty({ description: 'Stock disponible del producto', example: 100 })
+  @IsNotEmpty()
+  @IsInt()
+  @Min(0)
+  stock: number;
 }
 

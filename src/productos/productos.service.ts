@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException  } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, FindOptionsWhere, Like, Repository } from 'typeorm';
 
@@ -106,6 +106,32 @@ export class ProductosService {
   async remove(id: number): Promise<void> {
     await this.findOne(id);
     await this.productoRepository.delete(id);
+  }
+
+  // Método para disminuir el stock de un producto
+  async disminuirStock(productoId: number, cantidad: number): Promise<void> {
+    const producto = await this.productoRepository.findOneBy({ id: productoId });
+    if (!producto) {
+      throw new NotFoundException(`Producto con ID ${productoId} no encontrado`);
+    }
+
+    if (producto.stock < cantidad) {
+      throw new BadRequestException(`Stock insuficiente para el producto con ID ${productoId}`);
+    }
+
+    producto.stock -= cantidad;
+    await this.productoRepository.save(producto);
+  }
+
+  // Método para aumentar el stock de un producto (opcional, por si se necesita)
+  async aumentarStock(productoId: number, cantidad: number): Promise<void> {
+    const producto = await this.productoRepository.findOneBy({ id: productoId });
+    if (!producto) {
+      throw new NotFoundException(`Producto con ID ${productoId} no encontrado`);
+    }
+
+    producto.stock += cantidad;
+    await this.productoRepository.save(producto);
   }
 }
 

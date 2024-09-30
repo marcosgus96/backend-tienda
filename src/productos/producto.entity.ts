@@ -25,7 +25,11 @@ export class Producto {
   @Column()
   imagen: string;
 
+  @ApiProperty({ description: 'Stock disponible del producto' })
+  @Column('int', { default: 0 })
+  stock: number;
+
   @ApiProperty({ description: 'Categoría a la que pertenece el producto', type: () => Categoria })
-  @ManyToOne(() => Categoria, (categoria) => categoria.productos, { eager: true })
+  @ManyToOne(() => Categoria, (categoria) => categoria.productos)
   categoria: Categoria;
 }
