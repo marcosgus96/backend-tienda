@@ -2,6 +2,63 @@
   <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
 </p>
 
+# Estructura Relacional de la Base de Datos
+![Diagrama de la Base de Datos](./docs/Diagrama-BD.png)
+#### Tabla Usuario
+
+| Campo    | Tipo     | Restricciones     | Descripción                         |
+|----------|----------|-------------------|-------------------------------------|
+| id       | int      | PK, autoincrement | Identificador único del usuario     |
+| username | varchar  | Único, no nulo    | Nombre de usuario                   |
+| password | varchar  | No nulo           | Contraseña del usuario              |
+| email    | varchar  | Único, no nulo    | Correo electrónico del usuario      |
+
+#### Tabla Producto
+
+| Campo        | Tipo     | Restricciones     | Descripción                           |
+|--------------|----------|-------------------|---------------------------------------|
+| id           | int      | PK, autoincrement | Identificador único del producto      |
+| nombre       | varchar  | No nulo           | Nombre del producto                   |
+| descripcion  | text     |                   | Descripción del producto              |
+| precio       | decimal  | No nulo           | Precio unitario del producto          |
+| stock        | int      | No nulo           | Cantidad en stock                     |
+| categoria_id | int      | FK a Categoria.id | Referencia a la categoría del producto |
+
+#### Tabla Categoria
+
+| Campo | Tipo     | Restricciones     | Descripción                     |
+|-------|----------|-------------------|---------------------------------|
+| id    | int      | PK, autoincrement | Identificador único de la categoría |
+| nombre| varchar  | No nulo           | Nombre de la categoría          |
+
+#### Tabla Pedido
+
+| Campo          | Tipo     | Restricciones     | Descripción                          |
+|----------------|----------|-------------------|--------------------------------------|
+| id             | int      | PK, autoincrement | Identificador único del pedido       |
+| usuario_id     | int      | FK a Usuario.id   | Referencia al usuario que hizo el pedido |
+| fecha_creacion | datetime | No nulo           | Fecha y hora de creación del pedido  |
+| estado         | varchar  | No nulo           | Estado actual del pedido             |
+
+#### Tabla DetallePedido
+
+| Campo         | Tipo     | Restricciones     | Descripción                          |
+|---------------|----------|-------------------|--------------------------------------|
+| id            | int      | PK, autoincrement | Identificador único del detalle      |
+| pedido_id     | int      | FK a Pedido.id    | Referencia al pedido                 |
+| producto_id   | int      | FK a Producto.id  | Referencia al producto               |
+| cantidad      | int      | No nulo           | Cantidad del producto en el pedido   |
+| precio_unitario | decimal | No nulo          | Precio unitario en el momento del pedido |
+
+### Relaciones entre Tablas
+
+- **Un `Usuario` puede tener múltiples `Pedido`.**
+- **Un `Pedido` pertenece a un `Usuario`.**
+- **Un `Pedido` tiene múltiples `DetallePedido`.**
+- **Un `DetallePedido` pertenece a un `Pedido` y a un `Producto`.**
+- **Un `Producto` pertenece a una `Categoria`.**
+- **Una `Categoria` puede tener múltiples `Producto`.**
+
 [circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
 [circleci-url]: https://circleci.com/gh/nestjs/nest
 
