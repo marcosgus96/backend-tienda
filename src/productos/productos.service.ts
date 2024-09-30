@@ -21,6 +21,7 @@ export class ProductosService {
   ) {}
 
   async findAll(query: GetProductosDto): Promise<{ data: Producto[]; total: number; pagina: number; lastPage: number }> {
+    console.log('Emitiendo evento al de servicio');
     const {
       categoriaId,
       nombre,

@@ -38,6 +38,7 @@ export class ProductosController {
     },
   })
   async findAll(@Query() query: GetProductosDto): Promise<{ data: Producto[]; total: number }> {
+    console.log('Emitiendo evento al controlador');
     return this.productosService.findAll(query);
   }
 

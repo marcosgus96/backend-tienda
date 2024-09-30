@@ -17,7 +17,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
       {
         name: 'NOTIFICACIONES_SERVICE',
         transport: Transport.TCP,
-        options: { host: 'localhost', port: 3001 },
+        options: {  host: '127.0.0.1', port: 3001} // Tiempo de espera en milisegundos },
       },
       {
         name: 'FACTURACION_SERVICE',

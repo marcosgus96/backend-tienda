@@ -10,6 +10,9 @@ import { ProductosService } from '../productos/productos.service';
 // ... otras importaciones
 import { Producto } from '../productos/producto.entity';
 import { ClientProxy } from '@nestjs/microservices';
+// ... Manejo de excepcion en el caso de no contar con el microservicio
+import { catchError } from 'rxjs/operators';
+import { throwError } from 'rxjs'
 
 
 @Injectable()
@@ -140,7 +143,15 @@ export class PedidosService {
       emailUsuario,
       estadoPedido: estado,
       idPedido: pedido.id,
-    });
+    })
+    .pipe(
+      catchError((err) => {
+        console.error('Error al emitir evento al microservicio de notificaciones:', err);
+        // Aquí puedes decidir cómo manejar el error
+        return throwError(() => err);
+      }),
+    )
+    .subscribe();
 
     return pedidoActualizado;
   }
