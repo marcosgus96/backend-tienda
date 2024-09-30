@@ -9,5 +9,6 @@ import { Categoria } from 'src/categorias/categoria.entity';
   imports: [TypeOrmModule.forFeature([Producto, Categoria])], //TypeOrmMoudle registra la entidad para que esté disponible en el módulo y pueda ser inyectada en los servicio
   controllers: [ProductosController],
   providers: [ProductosService],
+  exports: [ProductosService], // Exportamos el servicio aquí
 })
 export class ProductosModule {}

@@ -2,6 +2,9 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ProductosModule } from './productos/productos.module';
 import { CategoriasModule } from './categorias/categorias.module';
+import { UsuariosModule } from './usuarios/usuarios.module';
+import { AuthModule } from './auth/auth.module';
+import { PedidosModule } from './pedidos/pedidos.module';
 
 @Module({
   imports: [
@@ -18,6 +21,9 @@ import { CategoriasModule } from './categorias/categorias.module';
     }),
     ProductosModule,
     CategoriasModule,
+    UsuariosModule,
+    AuthModule,
+    PedidosModule,
   ],
 })
 export class AppModule {}

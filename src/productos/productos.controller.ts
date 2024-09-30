@@ -4,7 +4,12 @@ import { CreateProductoDto } from './dto/create-producto.dto';
 import { UpdateProductoDto } from './dto/update-producto.dto';
 import { GetProductosDto } from './dto/get-productos.dto';
 import { Producto } from './producto.entity';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
+import { UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
+import { Rol } from '../usuarios/usuario.entity';
 
 @ApiTags('productos')
 @Controller('productos')
@@ -45,6 +50,9 @@ export class ProductosController {
     return this.productosService.findOne(id);
   }
 
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(Rol.ADMIN)
   @Post()
   @ApiOperation({ summary: 'Crear un nuevo producto' })
   @ApiBody({ type: CreateProductoDto })
@@ -53,6 +61,9 @@ export class ProductosController {
     return this.productosService.create(createProductoDto);
   }
 
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(Rol.ADMIN)
   @Put(':id')
   @ApiOperation({ summary: 'Actualizar un producto existente' })
   @ApiParam({ name: 'id', description: 'ID del producto', type: Number })
@@ -66,6 +77,9 @@ export class ProductosController {
     return this.productosService.update(id, updateProductoDto);
   }
 
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(Rol.ADMIN)
   @Delete(':id')
   @ApiOperation({ summary: 'Eliminar un producto' })
   @ApiParam({ name: 'id', description: 'ID del producto', type: Number })
