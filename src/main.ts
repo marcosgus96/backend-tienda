@@ -1,35 +1,60 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';//El ValidationPipe automáticamente valida las solicitudes entrantes basadas en las reglas definidas en nuestras entidades o DTOs (Data Transfer Objects)
+import { ValidationPipe } from '@nestjs/common'; // El ValidationPipe automáticamente valida las solicitudes entrantes basadas en las reglas definidas en nuestras entidades o DTOs (Data Transfer Objects)
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as dotenv from 'dotenv';
 import { Transport } from '@nestjs/microservices';
 
 async function bootstrap() {
-  
+
   const app = await NestFactory.create(AppModule);
-  app.connectMicroservice({
-    transport: Transport.TCP,
+
+  // Configurar CORS antes que nada
+  app.enableCors({
+    origin: 'http://localhost:3001', // Reemplaza con el origen de tu frontend
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    credentials: true,
   });
-  app.useGlobalPipes(new ValidationPipe());
-  /*http://localhost:3000/api para ver la documentación de tu API.*/
-  const config = new DocumentBuilder()
-  .setTitle('API de Tienda')
-  .setDescription('Documentación de la API de la tienda')
-  .setVersion('1.0')
-  .addBearerAuth(
+
+  // Aplicar Pipes Globales
+  app.useGlobalPipes(new ValidationPipe(
     {
-      type: 'http',
-      scheme: 'bearer',
-      bearerFormat: 'JWT',
-    },
-    'access-token', // Este es el nombre que asignamos al esquema de seguridad
-  )
-  .build();
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+      skipMissingProperties: false,
+      skipNullProperties: false,
+      skipUndefinedProperties: false,
+    }
+  ));
+
+  // Configurar Swagger
+  const config = new DocumentBuilder()
+    .setTitle('API de Tienda')
+    .setDescription('Documentación de la API de la tienda')
+    .setVersion('1.0')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+      },
+      'access-token', // Este es el nombre que asignamos al esquema de seguridad
+    )
+    .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
+
+  // Configurar variables de entorno
   dotenv.config();
-  await app.startAllMicroservices();
+
+  // Conectar Microservicio
+  //app.connectMicroservice({
+    //transport: Transport.TCP,
+  //});
+
+  // Iniciar la aplicación y los microservicios
+  //await app.startAllMicroservices();
   await app.listen(3000);
 }
 bootstrap();
