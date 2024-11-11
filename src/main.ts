@@ -4,10 +4,12 @@ import { ValidationPipe } from '@nestjs/common'; // El ValidationPipe automátic
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as dotenv from 'dotenv';
 import { Transport } from '@nestjs/microservices';
+import { join } from 'path';
+import { NestExpressApplication } from '@nestjs/platform-express';
 
 async function bootstrap() {
 
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   // Configurar CORS antes que nada
   app.enableCors({
@@ -55,6 +57,9 @@ async function bootstrap() {
 
   // Iniciar la aplicación y los microservicios
   //await app.startAllMicroservices();
+  app.useStaticAssets(join(__dirname, '..', 'uploads'), {
+    prefix: '/uploads/',
+  });
   await app.listen(3000);
 }
 bootstrap();

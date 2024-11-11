@@ -6,7 +6,7 @@ import { Producto } from './producto.entity';
 import { CreateProductoDto } from './dto/create-producto.dto';
 import { UpdateProductoDto } from './dto/update-producto.dto';
 import { GetProductosDto } from './dto/get-productos.dto';
-import { Categoria } from 'src/categorias/categoria.entity';
+import { Categoria } from '../categorias/categoria.entity';
 /*En el método create, utilizamos this.productoRepository.create(createProductoDto) para crear una nueva 
 instancia de Producto a partir del DTO. En el método update, primero obtenemos el producto existente, 
 luego utilizamos Object.assign para actualizar sus propiedades con los valores del DTO, y finalmente guardamos los cambios. */
@@ -92,8 +92,13 @@ export class ProductosService {
   async update(id: number, updateProductoDto: UpdateProductoDto): Promise<Producto> {
     const producto = await this.findOne(id);
 
+    if (!producto) {
+      throw new NotFoundException('Producto no encontrado');
+    }
+    
     if (updateProductoDto.categoriaId) {
       const categoria = await this.categoriaRepository.findOneBy({ id: updateProductoDto.categoriaId });
+      
       if (!categoria) {
         throw new NotFoundException(`Categoría con ID ${updateProductoDto.categoriaId} no encontrada`);
       }
@@ -134,5 +139,27 @@ export class ProductosService {
     producto.stock += cantidad;
     await this.productoRepository.save(producto);
   }
+
+  async findByCategory(categoriaId: number): Promise<Producto[]> {
+    return this.productoRepository.find({
+        where: { categoria: { id: categoriaId } },
+        relations: ['categoria'],
+    });
+}
+
+
+  async updateStock(id: number, nuevoStock: number): Promise<Producto> {
+    const producto = await this.productoRepository.findOne({ where: { id } });
+    if (nuevoStock < 0) {
+      throw new BadRequestException('El stock no puede ser negativo');
+    }
+    if (!producto) {
+      throw new NotFoundException('Producto no encontrado');
+    }
+    producto.stock = nuevoStock;
+
+    return this.productoRepository.save(producto);
+  }
+  
 }
 

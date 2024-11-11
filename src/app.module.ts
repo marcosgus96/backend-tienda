@@ -5,9 +5,13 @@ import { CategoriasModule } from './categorias/categorias.module';
 import { UsuariosModule } from './usuarios/usuarios.module';
 import { AuthModule } from './auth/auth.module';
 import { PedidosModule } from './pedidos/pedidos.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
     // Configuración de la base de datos
     TypeOrmModule.forRoot({
       type: 'postgres',

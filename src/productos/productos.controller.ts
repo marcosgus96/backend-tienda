@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, Query } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, Query, UseInterceptors, UploadedFile, NotFoundException, Patch } from '@nestjs/common';
 import { ProductosService } from './productos.service';
 import { CreateProductoDto } from './dto/create-producto.dto';
 import { UpdateProductoDto } from './dto/update-producto.dto';
@@ -10,6 +10,9 @@ import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { Rol } from '../usuarios/usuario.entity';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { multerOptions } from '../config/multer.config';
+import { Express } from 'express';
 
 @ApiTags('productos')
 @Controller('productos')
@@ -55,10 +58,23 @@ export class ProductosController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles(Rol.ADMIN)
   @Post()
+  @UseInterceptors(FileInterceptor('imagen', multerOptions))
   @ApiOperation({ summary: 'Crear un nuevo producto' })
   @ApiBody({ type: CreateProductoDto })
   @ApiResponse({ status: 201, description: 'Producto creado exitosamente.', type: Producto })
-  async create(@Body() createProductoDto: CreateProductoDto): Promise<Producto> {
+  async create(@UploadedFile() file: Express.Multer.File, @Body() body: any) {
+    const createProductoDto = new CreateProductoDto();
+    createProductoDto.nombre = body.nombre;
+    createProductoDto.descripcion = body.descripcion;
+    createProductoDto.precio = parseFloat(body.precio);
+    createProductoDto.categoriaId = parseInt(body.categoriaId);
+    createProductoDto.stock = parseInt(body.stock);
+    console.log('Archivo recibido:', file);
+    console.log('Datos recibidos:', createProductoDto);
+    
+    if (file) {
+      createProductoDto.imagen = file.filename;
+    }
     return this.productosService.create(createProductoDto);
   }
 
@@ -66,6 +82,7 @@ export class ProductosController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles(Rol.ADMIN)
   @Put(':id')
+  @UseInterceptors(FileInterceptor('imagen', multerOptions))
   @ApiOperation({ summary: 'Actualizar un producto existente' })
   @ApiParam({ name: 'id', description: 'ID del producto', type: Number })
   @ApiBody({ type: UpdateProductoDto })
@@ -73,9 +90,25 @@ export class ProductosController {
   @ApiResponse({ status: 404, description: 'Producto no encontrado.' })
   async update(
     @Param('id') id: number,
+    @UploadedFile() file: Express.Multer.File,
     @Body() updateProductoDto: UpdateProductoDto,
   ): Promise<Producto> {
-    return this.productosService.update(id, updateProductoDto);
+    const productoActual = await this.productosService.findOne(+id);
+    if (!productoActual) {
+      throw new NotFoundException('Producto no encontrado');
+    }
+    // Si se sube una nueva imagen, actualizar el campo 'imagen'
+    if (file) {
+      updateProductoDto.imagen = file.filename;
+      // Opcional: Eliminar la imagen anterior del servidor
+      // Código para eliminar la imagen anterior...
+    } else {
+      // Si no se sube una nueva imagen, mantener la imagen existente
+      updateProductoDto.imagen = productoActual.imagen;
+    }
+
+    // Actualizar el producto
+    return this.productosService.update(+id, updateProductoDto);
   }
 
   @ApiBearerAuth()
@@ -88,6 +121,16 @@ export class ProductosController {
   @ApiResponse({ status: 404, description: 'Producto no encontrado.' })
   async remove(@Param('id') id: number): Promise<void> {
     return this.productosService.remove(id);
+  }
+
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(Rol.ADMIN)
+  @Patch(':id/stock')
+  async updateStock(
+    @Param('id') id: string,
+    @Body('stock') nuevoStock: number,
+  ) {
+    return this.productosService.updateStock(+id, nuevoStock);
   }
 }
 
